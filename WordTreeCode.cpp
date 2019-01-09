@@ -307,20 +307,19 @@ void deleteWord(TreeNodePtr &root, const string str)
 void loadFromFile(TreeNodePtr root)
 {
 	ifstream infile;
-	cout<<"Enter file name"<<endl;
-	cout<<"Ensure your file has the same directory as this program, ends in \".txt\", has one word per line, all words are lowercase, and ends in ENDFILE"<<endl;
-	string x;
-	cin >> x;
-	infile.open("x"); //open our file
+	cout<<"Ensure your file has the same directory as this program, is named \"wordtreedat.txt\", and ends in ENDFILE"<<endl;
+	infile.open("wordtreedat.txt"); //open our file
 	if (!infile)
 	{
 		cerr << "Unable to open the file !!";
 		exit(1); // END THE PROGRAM
 	}
 	string input;
+	infile >> input;
 	while(input!="ENDFILE")
 	{
 		insert(input, root);
+		infile >> input;
 	}
 	infile.close(); //close the file
 }
