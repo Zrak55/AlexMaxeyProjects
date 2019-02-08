@@ -1,7 +1,15 @@
 https://drive.google.com/drive/folders/1mCyJzIhLT6mpgGgcwJdgZawEYJb9S9L8?usp=sharing
 
-Follow the link and download Blind_Final.  Unzip the folder and run the executable called "Blind" within it.
+Follow the link and download Blind_Final.  Unzip the folder and run the executable called "Blind" within it.  Recommended on Windows
 
-This was made as a team project as a part of Game Jam 2019.  It was a great experience working with different people with different skillsets like 3D and audio artists to put together a coherent project.  The ability to work together with these different groups of people within the project was, I believe, good practice for what I might experience in the real world.  Communication and a clear team goal were very important to making sure we got the project done both within the 48 hour period we were given and in a high-quality manner.
+This was made as a team project as a part of Global Game Jam 2019.  It was a great experience working with different people with different 
+skillsets like 3D and audio artists to put together a coherent project.  The ability to work together with these different groups of people
+within the project was, I believe, good practice for what I might experience in the real world.  Communication and a clear team goal were
+very important to making sure we got the project done both within the 48 hour period we were given and in a high-quality manner.
 
-My role on the team was programming, in which I took on the leader role.  Some of the team members weren't familiar with the tool we used to design the game, while another had never used the language the engine used to run, so I spent a decent amount of time introducing and teaching these members both the tool and some features of C# that they wouldn't be a familiar with having only a C background.  In addition, I did a lot of the programming work with the movement of the player and coding things like objective checking and ordering along with playing audio files and timing of events.  It was a valuable experience both relying on my teammates to complete their task they were assigned, as well as building off of the code of others when we needed to integrate and improve on different parts of the project.
+My role on the team was programming, in which I took on the leader role.  Some of the team members weren't familiar with the tool we used
+to design the game, while another had never used the language the engine used to run, so I spent a decent amount of time introducing and 
+teaching these members both the tool and some features of C# that they wouldn't be a familiar with having only a C background.  In 
+addition, I did a lot of the programming work with the movement of the player and coding things like objective checking and ordering along
+with playing audio files and timing of events.  It was a valuable experience both relying on my teammates to complete their task they were 
+assigned, as well as building off of the code of others when we needed to integrate and improve on different parts of the project.
