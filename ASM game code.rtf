@@ -1,0 +1,1844 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}
+{\*\generator Riched20 10.0.18362}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\f0\fs22\lang9 %include "/usr/local/share/csc314/asm_io.inc"\par
+\par
+; the file that stores the initial state\par
+%define BOARD_FILE 'board.txt'\par
+%define MENU_FILE 'Menu.txt'\par
+%define MS_FILE 'minesweeper.txt'\par
+\par
+; how to represent everything\par
+%define WALL_CHAR '#'\par
+%define SNAKE_CHAR 'S'\par
+%define SNAKE_TAIL 'O'\par
+%define GOLD '$'\par
+%define EMPTY_CHAR ' '\par
+%define SNAKE_PATH 'X'\par
+%define SNAKE_FIRST '>'\par
+%define SNAKE_TEMP      '&'\par
+%define BOMB_CHAR       '*'\par
+%define ms_chr  'M'\par
+%define FLAG_CHAR       'F'\par
+\par
+ONE     db              " ______",10,13,\\\par
+                        "|      |",10,13,\\\par
+                        "|  1   |",10,13,\\\par
+                        "|______|",10,13,0\par
+\par
+TWO     db          " ______",10,13,\\\par
+            "|      |",10,13,\\\par
+            "|  2   |",10,13,\\\par
+            "|______|",10,13,0\par
+\par
+THREE   db        " ______",10,13,\\\par
+              "|      |",10,13,\\\par
+              "|  3   |",10,13,\\\par
+              "|______|",10,13,0\par
+\par
+FOUR    db       " ______",10,13,\\\par
+             "|      |",10,13,\\\par
+             "|  4   |",10,13,\\\par
+             "|______|",10,13,0\par
+\par
+FIVE    db       " ______",10,13,\\\par
+             "|      |",10,13,\\\par
+             "|  5   |",10,13,\\\par
+             "|______|",10,13,0\par
+\par
+SIX     db          " ______",10,13,\\\par
+            "|      |",10,13,\\\par
+            "|  6   |",10,13,\\\par
+            "|______|",10,13,0\par
+\par
+%define n_zero 'z'\par
+%define n_one 'o'\par
+%define n_two 't'\par
+%define n_three 'h'\par
+%define n_four 'f'\par
+%define n_five 'i'\par
+%define n_six 's'\par
+%define n_seven 'e'\par
+%define n_eight 'g'\par
+\par
+\par
+; the size of the game screen in characters\par
+%define HEIGHT 20\par
+%define WIDTH 40\par
+\par
+%define MENU_HEIGHT     8\par
+%define MENU_WIDTH      42\par
+\par
+%define MS_HEIGHT 21\par
+%define MS_WIDTH 42\par
+\par
+%define NUM_BOMBS 15\par
+\par
+; the player starting position.\par
+; top left is considered (0,0)\par
+%define STARTX 1\par
+%define STARTY 1\par
+%define START_GOLD 0\par
+%define MSSTARTX 1\par
+%define MSSTARTY 1\par
+\par
+\par
+; these keys do things\par
+%define EXITCHAR 'x'\par
+%define UPCHAR 'w'\par
+%define LEFTCHAR 'a'\par
+%define DOWNCHAR 's'\par
+%define RIGHTCHAR 'd'\par
+%define REVEAL 'r'\par
+%define FLAG 'f'\par
+\par
+; how frequently we check for input\par
+; 1,000,000 = 1 second\par
+%define TICK 250000\par
+\par
+\par
+%define flag1 0b00001\par
+%define flag2 0b00010\par
+%define flag3 0b00100\par
+%define flag4 0b01000\par
+%define flag5 0b10000\par
+\par
+\par
+\par
+segment .data\par
+\par
+        ; used to fopen() the board file defined above\par
+        board_file                      db BOARD_FILE,0\par
+        menu_file                       db MENU_FILE, 0\par
+        ms_file                         db MS_FILE, 0\par
+\par
+        ; used to change the terminal mode\par
+        mode_r                          db "r",0\par
+        raw_mode_on_cmd         db "stty raw -echo",0\par
+        raw_mode_off_cmd        db "stty -raw echo",0\par
+\par
+        ; called by system() to clear/refresh the screen\par
+        clear_screen_cmd        db "clear",0\par
+\par
+\par
+        play_again                      db "Play again? y/n",13,10,0\par
+        ; things the program will print\par
+        ms_lose                         db 13,10,"BOOM!!!",13,10,0\par
+\par
+        snake_help_str          db 13,10,"Controls: ", \\\par
+                                                        LEFTCHAR,"=LEFT TURN / ", \\\par
+                                                        RIGHTCHAR,"=RIGHT TURN / ", \\\par
+                                                        EXITCHAR,"=EXIT", \\\par
+                                                        13,10,10,0\par
+\par
+        ms_help_str             db              13,10,"Controls: ", LEFTCHAR,"=Move Left | ", RIGHTCHAR,"=Move Right | ", \\\par
+                                                        UPCHAR, "=Move Up | ", DOWNCHAR,"=Move Down | ", REVEAL, "=Reveal Square | ", \\\par
+                                                        FLAG_CHAR, "=Flag Square | ", EXITCHAR,"=Exit",13,10,\\\par
+                                                        "Number of Bombs: %d", 13,10,0\par
+\par
+        gold_fmt                        db 13,10,"Score: %d",13,10,10,0\par
+\par
+        yaht_cmd_str            db      13,10, "1-5: reroll that die   r: roll selections", 13,10,0\par
+\par
+        DEBUG                           db "Detected Tail",0\par
+\par
+        snake_start                     db      "Press any key to start",0\par
+segment .bss\par
+\par
+        ; this array stores the current rendered gameboard (HxW)\par
+        board   resb    (HEIGHT * WIDTH)\par
+        menu_board      resb (MENU_HEIGHT * MENU_WIDTH)\par
+        ms_board        resb (MS_HEIGHT * MS_WIDTH)\par
+\par
+        ; these variables store the current player position\par
+        xpos    resd    1\par
+        ypos    resd    1\par
+        msxpos  resd    1\par
+        msypos  resd    1\par
+\par
+        gold_cnt resd   1\par
+\par
+        snake_dir_x     resd    1\par
+        snake_dir_y     resd    1\par
+\par
+        yd1     resd    1\par
+        yd2     resd    1\par
+        yd3     resd    1\par
+        yd4     resd    1\par
+        yd5     resd    1\par
+\par
+        bomb_storage    resd    NUM_BOMBS\par
+segment .text\par
+\par
+        global  asm_main\par
+        global  raw_mode_on\par
+        global  raw_mode_off\par
+        global  init_board\par
+        global  render\par
+        global  init_menu\par
+        global  render_menu\par
+\par
+\par
+\par
+        extern  system\par
+        extern  putchar\par
+        extern  getchar\par
+        extern  printf\par
+        extern  fopen\par
+        extern  fread\par
+        extern  fgetc\par
+        extern  fclose\par
+\par
+        extern  usleep\par
+        extern  fcntl\par
+\par
+        extern  time\par
+        extern  srand\par
+        extern  rand\par
+\par
+asm_main:\par
+        enter   0,0\par
+        pusha\par
+\par
+\par
+\par
+        call raw_mode_on\par
+\par
+        topmain:\par
+        call init_menu\par
+        call render_menu\par
+        call getchar\par
+\par
+        cmp al, '1'\par
+        jne m1\par
+        call snake_main\par
+        jmp topmain\par
+        m1:\par
+        cmp al, '2'\par
+        jne m2\par
+        call yahtzee_main\par
+        jmp topmain\par
+        m2:\par
+        cmp al, '3'\par
+        jne m3\par
+        call ms_main\par
+        jmp topmain\par
+        m3:\par
+        cmp al, '4'\par
+        jne topmain\par
+\par
+        end_main:\par
+        call raw_mode_off\par
+\par
+     ;***************CODE ENDS HERE*****************************\par
+     popa\par
+     mov     eax, 0\par
+     leave\par
+     ret\par
+\par
+\par
+\par
+\par
+; === Menu ===\par
+init_menu:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        ; FILE* and loop counter\par
+        ; ebp-4, ebp-8\par
+        sub             esp, 8\par
+\par
+        ; open the file\par
+        push    mode_r\par
+        push    menu_file\par
+        call    fopen\par
+        add             esp, 8\par
+        mov             DWORD [ebp-4], eax\par
+\par
+        ; read the file data into the global buffer\par
+        ; line-by-line so we can ignore the newline characters\par
+        mov             DWORD [ebp-8], 0\par
+        read_loopm:\par
+        cmp             DWORD [ebp-8], MENU_HEIGHT\par
+        je              read_loop_endm\par
+\par
+                ; find the offset (WIDTH * counter)\par
+                mov             eax, MENU_WIDTH\par
+                mul             DWORD [ebp-8]\par
+                lea             ebx, [menu_board + eax]\par
+\par
+                ; read the bytes into the buffer\par
+                push    DWORD [ebp-4]\par
+                push    MENU_WIDTH\par
+                push    1\par
+                push    ebx\par
+                call    fread\par
+                add             esp, 16\par
+\par
+                ; slurp up the newline\par
+                push    DWORD [ebp-4]\par
+                call    fgetc\par
+                add             esp, 4\par
+\par
+        inc             DWORD [ebp-8]\par
+        jmp             read_loopm\par
+        read_loop_endm:\par
+\par
+        ; close the open file handle\par
+        push    DWORD [ebp-4]\par
+        call    fclose\par
+        add             esp, 4\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+\par
+; === FUNCTION ===\par
+render_menu:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        ; two ints, for two loop counters\par
+        ; ebp-4, ebp-8\par
+        sub             esp, 8\par
+\par
+        ; clear the screen\par
+        push    clear_screen_cmd\par
+        call    system\par
+        add             esp, 4\par
+\par
+        ; outside loop by height\par
+        ; i.e. for(c=0; c<height; c++)\par
+        mov             DWORD [ebp-4], 0\par
+        y_loop_startm:\par
+        cmp             DWORD [ebp-4], MENU_HEIGHT\par
+        je              y_loop_endm\par
+\par
+                ; inside loop by width\par
+                ; i.e. for(c=0; c<width; c++)\par
+                mov             DWORD [ebp-8], 0\par
+                x_loop_startm:\par
+                cmp             DWORD [ebp-8], MENU_WIDTH\par
+                je              x_loop_endm\par
+\par
+                            print_boardm:\par
+                                ; otherwise print whatever's in the buffer\par
+                                mov             eax, [ebp-4]\par
+                                mov             ebx, MENU_WIDTH\par
+                                mul             ebx\par
+                                add             eax, [ebp-8]\par
+                                mov             ebx, 0\par
+                                mov             bl, BYTE [menu_board + eax]\par
+                                push    ebx\par
+                        print_endm:\par
+                        call    putchar\par
+                        add             esp, 4\par
+\par
+                inc             DWORD [ebp-8]\par
+                jmp             x_loop_startm\par
+                x_loop_endm:\par
+\par
+                ; write a carriage return (necessary when in raw mode)\par
+                push    0x0d\par
+                call    putchar\par
+                add             esp, 4\par
+\par
+                ; write a newline\par
+                push    0x0a\par
+                call    putchar\par
+                add             esp, 4\par
+\par
+        inc             DWORD [ebp-4]\par
+        jmp             y_loop_startm\par
+        y_loop_endm:\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+;==========================================================================\par
+ms_main:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+                call init_ms\par
+\par
+        mov DWORD[msxpos], MSSTARTX\par
+        mov DWORD[msypos], MSSTARTY\par
+\par
+        mov esi, 0\par
+        spawn:\par
+                cmp esi, NUM_BOMBS\par
+                jge end_spawn\par
+                call create_bomb\par
+                inc esi\par
+                jmp spawn\par
+\par
+        end_spawn:\par
+        call set_vals\par
+        top_ms:\par
+; draw the game board\par
+\par
+                call    ms_render\par
+\par
+                ; get an action from the user\par
+                call    getchar\par
+\par
+                ; store the current position\par
+                ; we will test if the new position is legal\par
+                ; if not, we will restore these\par
+                mov             esi, [msxpos]\par
+                mov             edi, [msypos]\par
+\par
+                ; choose what to do\par
+                cmp             eax, EXITCHAR\par
+                je              end_ms\par
+                cmp     eax, REVEAL\par
+                je              rev\par
+                cmp     eax, FLAG\par
+                je              fla\par
+                cmp             eax, UPCHAR\par
+                je              ms_move_up\par
+                cmp             eax, LEFTCHAR\par
+                je              ms_move_left\par
+                cmp             eax, DOWNCHAR\par
+                je              ms_move_down\par
+                cmp             eax, RIGHTCHAR\par
+                je              ms_move_right\par
+                jmp             ms_input_end                    ; or just do nothing\par
+\par
+                ; move the player according to the input character\par
+                ms_move_up:\par
+                        sub             DWORD [msypos], 2\par
+                        jmp             ms_input_end\par
+                ms_move_left:\par
+                        sub             DWORD [msxpos], 4\par
+                        jmp             ms_input_end\par
+                ms_move_down:\par
+                        add             DWORD [msypos], 2\par
+                        jmp             ms_input_end\par
+                ms_move_right:\par
+                        add             DWORD [msxpos], 4\par
+                ms_input_end:\par
+\par
+                ; (W * y) + x = pos\par
+\par
+                ; compare the current position to the wall character\par
+                cmp DWORD[msxpos], 0\par
+                jle ms_im\par
+                cmp DWORD[msypos], 0\par
+                jle ms_im\par
+                cmp DWORD[msxpos], MS_WIDTH-2\par
+                jge ms_im\par
+                cmp DWORD[msypos], MS_HEIGHT\par
+                jge ms_im\par
+                jmp ms_valid_move\par
+                ms_im:\par
+                        ; opps, that was an invalid move, reset\par
+                        mov             DWORD [msxpos], esi\par
+                        mov             DWORD [msypos], edi\par
+                ms_valid_move:\par
+\par
+        jmp             top_ms\par
+        fla:\par
+                mov eax, edi\par
+                mov ebx, MS_WIDTH\par
+                mul ebx\par
+                add eax, esi\par
+                mov BYTE[ms_board+eax], FLAG_CHAR\par
+        rev:\par
+                ;(W * y) + x = pos\par
+                mov eax, edi\par
+                mov ebx, MS_WIDTH\par
+                mul ebx\par
+                add eax, esi\par
+                push eax\par
+                call reveal\par
+                add esp, 4\par
+                cmp eax, -1\par
+                jne top_ms\par
+\par
+        ms_end:\par
+                push ms_lose\par
+                call printf\par
+                add esp, 4\par
+                        mov edi, 6\par
+                wait_around:\par
+                        push TICK\par
+                        call usleep\par
+                        add esp, 4\par
+                        dec edi\par
+                        cmp edi, 0\par
+                        jg wait_around\par
+\par
+                end_ms:\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+;TESTER&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*\par
+set_vals_test:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+\par
+;=====Function======\par
+set_vals:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+\par
+\par
+\par
+\par
+                sub esp, 12 ;8 = y, 4 = x\par
+\par
+                mov DWORD[ebp-8], 1\par
+                mov DWORD[ebp-4], 1\par
+\par
+        top_sy:\par
+        cmp DWORD[ebp-8], MS_HEIGHT\par
+        jge end_sy\par
+                mov DWORD[ebp-4], 1\par
+                top_sx:\par
+                cmp DWORD[ebp-4], MS_WIDTH\par
+                jge end_sx\par
+\par
+\par
+                        mov DWORD[ebp-12], 0\par
+                        mov esi, DWORD[ebp-4]\par
+                        mov edi, DWORD[ebp-8]\par
+\par
+                        mov eax, edi\par
+                        mov ebx, MS_WIDTH\par
+                        mul ebx\par
+                        add eax, esi\par
+                        cmp BYTE[ms_board+eax], EMPTY_CHAR\par
+                        jne end_set_one\par
+                        mov ebx, eax\par
+\par
+\par
+                        s1:\par
+                        cmp esi, 1\par
+                        jle s2\par
+                        sub eax, 4\par
+                        cmp BYTE[ms_board+eax], BOMB_CHAR\par
+                        jne s90\par
+                        inc DWORD[ebp-12]\par
+                                s90:\par
+                                cmp edi, 1\par
+                                jle s11\par
+                                sub eax, MS_WIDTH*2\par
+                                cmp BYTE[ms_board+eax], BOMB_CHAR\par
+                                jne s11\par
+                                inc DWORD[ebp-12]\par
+                                s11:\par
+                                mov eax, ebx\par
+                                sub eax, 4\par
+                                cmp edi, MS_HEIGHT\par
+                                jge s12\par
+                                add eax, MS_WIDTH*2\par
+                                cmp BYTE[ms_board+eax], BOMB_CHAR\par
+                                jne s12\par
+                                inc DWORD[ebp-12]\par
+                                mov eax, ebx\par
+                                s12:\par
+                        s2:\par
+                        mov eax, ebx\par
+\par
+                        cmp edi, 1\par
+            jle s3\par
+            sub eax, 2*MS_WIDTH\par
+            cmp BYTE[ms_board+eax], BOMB_CHAR\par
+            jne s3\par
+            inc DWORD[ebp-12]\par
+            s3:\par
+                        mov eax, ebx\par
+                        cmp edi, MS_HEIGHT\par
+            jge s4\par
+            add eax, 2*MS_WIDTH\par
+            cmp BYTE[ms_board+eax], BOMB_CHAR\par
+            jne s4\par
+            inc DWORD[ebp-12]\par
+            s4:\par
+                        mov eax, ebx\par
+                        cmp esi, MS_WIDTH\par
+            jge s5\par
+            add eax, 4\par
+            cmp BYTE[ms_board+eax], BOMB_CHAR\par
+            jne s60\par
+            inc DWORD[ebp-12]\par
+                s60:\par
+                                cmp edi, 1\par
+                jle s30\par
+                sub eax, MS_WIDTH*2\par
+                cmp BYTE[ms_board+eax], BOMB_CHAR\par
+                jne s30\par
+                inc DWORD[ebp-12]\par
+                s30:\par
+                                mov eax, ebx\par
+                                add eax, 4\par
+                cmp edi, MS_HEIGHT\par
+                jge s22\par
+                add eax, MS_WIDTH*2\par
+                cmp BYTE[ms_board+eax], BOMB_CHAR\par
+                jne s22\par
+                inc DWORD[ebp-12]\par
+                s22:\par
+                        mov eax, ebx\par
+            s5:\par
+\par
+                        mov ebx, DWORD[ebp-12]\par
+\par
+                        cmp ebx, 0\par
+                        jne g1\par
+                        mov BYTE[ms_board+eax], n_zero\par
+                        g1:\par
+                        cmp ebx, 1\par
+                        jne g2\par
+                        mov BYTE[ms_board+eax], n_one\par
+                        g2:\par
+                        cmp ebx, 2\par
+                        jne g3\par
+                        mov BYTE[ms_board+eax], n_two\par
+                        g3:\par
+                        cmp ebx, 3\par
+                        jne g4\par
+                        mov BYTE[ms_board+eax], n_three\par
+                        g4:\par
+                        cmp ebx, 4\par
+                        jne g5\par
+                        mov BYTE[ms_board+eax], n_four\par
+                        g5:\par
+                        cmp ebx, 5\par
+                        jne g6\par
+                        mov BYTE[ms_board+eax], n_five\par
+                        g6:\par
+                        cmp ebx, 6\par
+                        jne g7\par
+                        mov BYTE[ms_board+eax], n_six\par
+                        g7:\par
+                        cmp ebx, 7\par
+                        jne g8\par
+                        mov BYTE[ms_board+eax], n_seven\par
+                        g8:\par
+                        cmp ebx, 8\par
+                        jne g9\par
+                        mov BYTE[ms_board+eax], n_eight\par
+                        g9:\par
+\par
+                end_set_one:\par
+\par
+                add DWORD[ebp-4], 4\par
+                jmp top_sx\par
+                end_sx:\par
+\par
+        add DWORD[ebp-8], 2\par
+        jmp top_sy\par
+        end_sy:\par
+\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+;=======Fucntion======\par
+create_bomb:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+                sub esp, 8  ;4 = x, 8 = y\par
+                push 0\par
+                call time\par
+                add esp, 4\par
+                push eax\par
+                call srand\par
+                add esp, 4\par
+                get_loc:\par
+\par
+                call rand\par
+                mov ebx, 10\par
+                mov edx, 0\par
+                div ebx\par
+                mov eax, edx\par
+                mov ebx, 4\par
+                mul ebx\par
+                add eax, 1 ;x\par
+                mov DWORD[ebp-4], eax\par
+                call rand\par
+                mov ebx, 10\par
+                mov edx, 0\par
+                div ebx\par
+                mov eax, edx\par
+                mov ebx, 2\par
+                mul ebx\par
+                add eax, 1 ;y\par
+                mov DWORD[ebp-8], eax\par
+\par
+                mov edx, 0\par
+                mov eax, DWORD[ebp-8]\par
+                mov ebx, MS_WIDTH\par
+                mul ebx\par
+                add eax, DWORD[ebp-4]   ;loc\par
+                cmp BYTE[ms_board+eax], EMPTY_CHAR\par
+                jne get_loc\par
+                mov BYTE[ms_board+eax], BOMB_CHAR\par
+                add esp, 8\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+;====Function=====\par
+reveal:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+        mov ebx, DWORD[ebp+8]\par
+        mov eax, 0\par
+        mov al, BYTE[ms_board+ebx]\par
+        cmp al, BOMB_CHAR\par
+        je is_bomb\par
+                cmp al, n_zero\par
+                jne r1\par
+                mov BYTE[ms_board+ebx], '0'\par
+                jmp r9i\par
+                r1:\par
+                cmp al, n_one\par
+                jne r2\par
+                mov BYTE[ms_board+ebx], '1'\par
+                jmp r9i\par
+                r2:\par
+                cmp al, n_two\par
+                jne r3\par
+                mov BYTE[ms_board+ebx], '2'\par
+                jmp r9i\par
+                r3:\par
+                cmp al, n_three\par
+                jne r4\par
+                mov BYTE[ms_board+ebx],'3'\par
+                jmp r9i\par
+                r4:\par
+                cmp al, n_four\par
+                jne r5\par
+                mov BYTE[ms_board+ebx],'4'\par
+                jmp r9i\par
+                r5:\par
+                cmp al, n_five\par
+                jne r6\par
+                mov BYTE[ms_board+ebx],'5'\par
+                jmp r9i\par
+                r6:\par
+                cmp al, n_six\par
+                jne r7\par
+                mov BYTE[ms_board+ebx], '6'\par
+                jmp r9i\par
+                r7:\par
+                cmp al, n_seven\par
+                jne r8i\par
+                mov BYTE[ms_board+ebx], '7'\par
+                jmp r9i\par
+                r8i:\par
+                cmp al, n_eight\par
+                jne r9i\par
+                mov BYTE[ms_board+ebx], '8'\par
+                r9i:\par
+\par
+                jmp end_reveal\par
+\par
+\par
+        is_bomb:\par
+                mov eax, -1\par
+\par
+\par
+\par
+        end_reveal:\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+;===== FUNCTION ===\par
+ms_render:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        ; two ints, for two loop counters\par
+        ; ebp-4, ebp-8\par
+        sub             esp, 8\par
+\par
+        ; clear the screen\par
+        push    clear_screen_cmd\par
+        call    system\par
+        add             esp, 4\par
+\par
+        ; print the help information\par
+        push NUM_BOMBS\par
+        push    ms_help_str\par
+        call    printf\par
+        add             esp, 8\par
+\par
+        ; outside loop by height\par
+        ; i.e. for(c=0; c<height; c++)\par
+        mov             DWORD [ebp-4], 0\par
+        msy_loop_start:\par
+        cmp             DWORD [ebp-4], MS_HEIGHT\par
+        je              msy_loop_end\par
+\par
+                ; inside loop by width\par
+                ; i.e. for(c=0; c<width; c++)\par
+                mov             DWORD [ebp-8], 0\par
+                msx_loop_start:\par
+                cmp             DWORD [ebp-8], MS_WIDTH\par
+                je              msx_loop_end\par
+\par
+                        ; check if (xpos,ypos)=(x,y)\par
+                        mov             eax, [msxpos]\par
+                        cmp             eax, DWORD [ebp-8]\par
+                        jne             msprint_board\par
+                        mov             eax, [msypos]\par
+                        cmp             eax, DWORD [ebp-4]\par
+                        jne             msprint_board\par
+                                ; if both were equal, print the player\par
+                                push    ms_chr\par
+                                jmp             msprint_end\par
+                        msprint_board:\par
+                                ; otherwise print whatever's in the buffer\par
+                                mov             eax, [ebp-4]\par
+                                mov             ebx, MS_WIDTH\par
+                                mul             ebx\par
+                                add             eax, [ebp-8]\par
+                                mov             ebx, 0\par
+                                mov             bl, BYTE [ms_board + eax]\par
+                                cmp bl, n_zero\par
+                                je is_n\par
+                                cmp bl, n_one\par
+                                je is_n\par
+                                cmp bl, n_two\par
+                                je is_n\par
+                                cmp bl, n_three\par
+                                je is_n\par
+                                cmp bl, n_four\par
+                                je is_n\par
+                                cmp bl, n_five\par
+                                je is_n\par
+                                cmp bl, n_six\par
+                                je is_n\par
+                                cmp bl, n_seven\par
+                                je is_n\par
+                                cmp bl, n_eight\par
+                                je is_n\par
+                                cmp bl, BOMB_CHAR\par
+                                je is_n\par
+                                push    ebx\par
+                                jmp msprint_end\par
+                        is_n:\par
+                                push EMPTY_CHAR\par
+                        msprint_end:\par
+                        call    putchar\par
+                        add             esp, 4\par
+\par
+                inc             DWORD [ebp-8]\par
+                jmp             msx_loop_start\par
+                msx_loop_end:\par
+\par
+                ; write a carriage return (necessary when in raw mode)\par
+                push    0x0d\par
+                call    putchar\par
+                add             esp, 4\par
+\par
+                ; write a newline\par
+                push    0x0a\par
+                call    putchar\par
+                add             esp, 4\par
+\par
+        inc             DWORD [ebp-4]\par
+        jmp             msy_loop_start\par
+        msy_loop_end:\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+\par
+\par
+\par
+\par
+; === FUNCTION ===\par
+init_ms:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        ; FILE* and loop counter\par
+        ; ebp-4, ebp-8\par
+        sub             esp, 8\par
+\par
+        ; open the file\par
+        push    mode_r\par
+        push    ms_file\par
+        call    fopen\par
+        add             esp, 8\par
+        mov             DWORD [ebp-4], eax\par
+\par
+        ; read the file data into the global buffer\par
+        ; line-by-line so we can ignore the newline characters\par
+        mov             DWORD [ebp-8], 0\par
+        read_loopms:\par
+        cmp             DWORD [ebp-8], MS_HEIGHT\par
+        je              read_loop_endms\par
+\par
+                ; find the offset (WIDTH * counter)\par
+                mov             eax, MS_WIDTH\par
+                mul             DWORD [ebp-8]\par
+                lea             ebx, [ms_board + eax]\par
+\par
+                ; read the bytes into the buffer\par
+                push    DWORD [ebp-4]\par
+                push    MS_WIDTH\par
+                push    1\par
+                push    ebx\par
+                call    fread\par
+                add             esp, 16\par
+\par
+                ; slurp up the newline\par
+                push    DWORD [ebp-4]\par
+                call    fgetc\par
+                add             esp, 4\par
+\par
+        inc             DWORD [ebp-8]\par
+        jmp             read_loopms\par
+        read_loop_endms:\par
+\par
+        ; close the open file handle\par
+        push    DWORD [ebp-4]\par
+        call    fclose\par
+        add             esp, 4\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+;=======================================\par
+yahtzee_main:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+        top_yaht:\par
+\par
+        push 0\par
+        call time\par
+        add esp, 4\par
+        push eax\par
+        call srand\par
+        add esp, 4\par
+\par
+        call roll\par
+        mov DWORD[yd1], eax\par
+        call roll\par
+        mov DWORD[yd2], eax\par
+        call roll\par
+        mov DWORD[yd3], eax\par
+        call roll\par
+        mov DWORD[yd4], eax\par
+        call roll\par
+        mov DWORD[yd5], eax\par
+\par
+        call print_dice\par
+\par
+        push yaht_cmd_str\par
+        call printf\par
+        add esp, 4\par
+\par
+        sub esp, 4\par
+        mov DWORD[ebp-4], 0\par
+        top_rr1:\par
+        call getchar\par
+        cmp eax, 'r'\par
+        je end_rr1\par
+        cmp eax, '1'\par
+        jne z2\par
+        or DWORD[ebp-4], flag1\par
+        jmp top_rr1\par
+        z2:\par
+        cmp eax, '2'\par
+        jne z3\par
+        or DWORD[ebp-4], flag2\par
+        jmp top_rr1\par
+        z3:\par
+        cmp eax, '3'\par
+        jne z4\par
+        or DWORD[ebp-4], flag3\par
+        jmp top_rr1\par
+        z4:\par
+        cmp eax, '4'\par
+        jne z5\par
+        or DWORD[ebp-4], flag4\par
+        jmp top_rr1\par
+        z5:\par
+        cmp eax, '5'\par
+        jne z6\par
+        or DWORD[ebp-4], flag5\par
+        jmp top_rr1\par
+\par
+        z6:\par
+        jmp top_rr1\par
+        end_rr1:\par
+\par
+        mov edi, flag1\par
+        and edi, DWORD[ebp-4]\par
+        cmp edi, flag1\par
+        jne x1\par
+        call roll\par
+        mov DWORD[yd1], eax\par
+        x1:\par
+        mov edi, flag2\par
+        and edi, DWORD[ebp-4]\par
+        cmp edi, flag2\par
+        jne x2\par
+        call roll\par
+        mov DWORD[yd2], eax\par
+        x2:\par
+        mov edi, flag3\par
+        and edi, DWORD[ebp-4]\par
+        cmp edi, flag3\par
+        jne x3\par
+        call roll\par
+        mov DWORD[yd3], eax\par
+        x3:\par
+        mov edi, flag4\par
+        and edi, DWORD[ebp-4]\par
+        cmp edi, flag4\par
+        jne x4\par
+        call roll\par
+        mov DWORD[yd4], eax\par
+        x4:\par
+        mov edi, flag5\par
+        and edi, DWORD[ebp-4]\par
+        cmp edi, flag5\par
+        jne x5\par
+        call roll\par
+        mov DWORD[yd5], eax\par
+        x5:\par
+\par
+        call print_dice\par
+\par
+     push yaht_cmd_str\par
+     call printf\par
+     add esp, 4\par
+\par
+     mov DWORD[ebp-4], 0\par
+     top_rr2:\par
+     call getchar\par
+     cmp eax, 'r'\par
+     je end_rr2\par
+     cmp eax, '1'\par
+         jne v2\par
+     or DWORD[ebp-4], flag1\par
+     jmp top_rr2\par
+     v2:\par
+     cmp eax, '2'\par
+     jne v3\par
+     or DWORD[ebp-4], flag2\par
+     jmp top_rr2\par
+     v3:\par
+     cmp eax, '3'\par
+     jne v4\par
+     or DWORD[ebp-4], flag3\par
+     jmp top_rr2\par
+     v4:\par
+     cmp eax, '4'\par
+     jne v5\par
+     or DWORD[ebp-4], flag4\par
+     jmp top_rr2\par
+     v5:\par
+     cmp eax, '5'\par
+     jne v6\par
+     or DWORD[ebp-4], flag5\par
+     jmp top_rr2\par
+\par
+     v6:\par
+     jmp top_rr2\par
+     end_rr2:\par
+\par
+     mov edi, flag1\par
+     and edi, DWORD[ebp-2]\par
+     cmp edi, 1\par
+     jne q1\par
+     call roll\par
+     mov DWORD[yd1], eax\par
+     q1:\par
+     mov edi, flag2\par
+     and edi, DWORD[ebp-4]\par
+     cmp edi, 2\par
+     jne q2\par
+     call roll\par
+     mov DWORD[yd2], eax\par
+     q2:\par
+     mov edi, flag3\par
+     and edi, DWORD[ebp-4]\par
+     cmp edi, 4\par
+     jne q3\par
+     call roll\par
+     mov DWORD[yd3], eax\par
+     q3:\par
+     mov edi, flag4\par
+     and edi, DWORD[ebp-4]\par
+     cmp edi, 8\par
+     jne q4\par
+     call roll\par
+     mov DWORD[yd4], eax\par
+     q4:\par
+     mov edi, flag5\par
+     and edi, DWORD[ebp-4]\par
+    cmp edi, 16\par
+        jne q5\par
+     call roll\par
+     mov DWORD[yd5], eax\par
+     q5:\par
+\par
+        call print_dice\par
+\par
+        push play_again\par
+        call printf\par
+        add esp, 4\par
+        call getchar\par
+        cmp al, 'y'\par
+        je top_yaht\par
+\par
+        end_yaht:\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+;====Function====\par
+print_dice:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+        push DWORD[yd1]\par
+        call print_die\par
+        add esp, 4\par
+        push DWORD[yd2]\par
+        call print_die\par
+        add esp, 4\par
+        push DWORD[yd3]\par
+        call print_die\par
+        add esp, 4\par
+        push DWORD[yd4]\par
+        call print_die\par
+        add esp, 4\par
+        push DWORD[yd5]\par
+        call print_die\par
+        add esp, 4\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+;=====Function====\par
+print_die:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+\par
+        cmp DWORD[ebp+8], 1\par
+        jne u2\par
+        push ONE\par
+        call printf\par
+        add esp, 4\par
+        jmp u8\par
+        u2:\par
+        cmp DWORD[ebp+8], 2\par
+        jne u3\par
+        push TWO\par
+        call printf\par
+        add esp, 4\par
+        jmp u8\par
+        u3:\par
+        cmp DWORD[ebp+8], 3\par
+        jne u4\par
+        push THREE\par
+        call printf\par
+        add esp,4\par
+        jmp u8\par
+        u4:\par
+        cmp DWORD[ebp+8], 4\par
+        jne u5\par
+        push FOUR\par
+        call printf\par
+        add esp, 4\par
+        jmp u8\par
+        u5:\par
+        cmp DWORD[ebp+8], 5\par
+        jne u6\par
+        push FIVE\par
+        call printf\par
+        add esp, 4\par
+        jmp u8\par
+        u6:\par
+        cmp DWORD[ebp+8], 6\par
+        jne u7\par
+        push SIX\par
+        call printf\par
+        add esp, 4\par
+        jmp u8\par
+        u7:\par
+                push DEBUG\par
+                call printf\par
+                add esp, 4\par
+\par
+        u8:\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+;==Function===\par
+roll:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+        call rand\par
+    mov edx, 0\par
+        mov ebx, 6\par
+    div ebx         ;random 0-5\par
+    mov eax, edx    ;set the modulus into eax\par
+        add eax, 1              ;now 1-6 instead of 0-5\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+\par
+;=========================================================================\par
+snake_main:\par
+        enter   0,0\par
+        pusha\par
+        ;***************CODE STARTS HERE***************************\par
+        push 0\par
+        call time\par
+        add esp, 4\par
+        push eax\par
+        call srand\par
+        add esp, 4              ;ready to get a random number with call rand\par
+                                        ;use modulus to get specific range\par
+\par
+\par
+        ; read the game board file into the global variable\par
+        call    init_board\par
+\par
+        ; set the player at the proper start position\par
+        mov             DWORD [xpos], STARTX\par
+        mov             DWORD [ypos], STARTY\par
+\par
+        mov             DWORD[snake_dir_x], 1\par
+        mov             DWORD[snake_dir_y], 0\par
+\par
+        mov             DWORD[gold_cnt], START_GOLD\par
+        ; the game happens in this loop\par
+        ; the steps are...\par
+        ;   1. render (draw) the current board\par
+        ;   2. get a character from the user\par
+        ;       3. store current xpos,ypos in esi,edi\par
+        ;       4. update xpos,ypos based on character from user\par
+        ;       5. check what's in the buffer (board) at new xpos,ypos\par
+        ;       6. if it's a wall, reset xpos,ypos to saved esi,edi\par
+        ;       7. otherwise, just continue! (xpos,ypos are ok)\par
+        call new_food\par
+\par
+        call snake_render\par
+        push snake_start\par
+        call printf\par
+        add esp, 4\par
+        call getchar\par
+\par
+        snake_loop:\par
+\par
+                ; draw the game board\par
+                call    snake_render\par
+\par
+                push TICK\par
+                call usleep\par
+                add esp, 4              ;sleep for tick\par
+\par
+\par
+                ; store the current position\par
+        ; we will test if the new position is legal\par
+        ; if not, we will restore these\par
+\par
+                mov     eax, WIDTH\par
+        mul     DWORD [ypos]\par
+        add     eax, [xpos]\par
+        lea     eax, [board + eax]\par
+        mov             BYTE[eax], SNAKE_PATH\par
+\par
+\par
+                cmp DWORD[snake_dir_x], 1\par
+                jne mv2\par
+                inc DWORD[xpos]\par
+                mv2:\par
+                cmp DWORD[snake_dir_x], -1\par
+                jne mv3\par
+                dec DWORD[xpos]\par
+                mv3:\par
+                cmp DWORD[snake_dir_y], 1\par
+                jne mv4\par
+                dec DWORD[ypos]\par
+                mv4:\par
+                cmp DWORD[snake_dir_y], -1\par
+                jne mv5\par
+                inc DWORD[ypos]\par
+                mv5:\par
+\par
+\par
+\par
+             ; (W * y) + x = pos\par
+                 ; compare the current position to the wall character\par
+\par
+                 mov     eax, WIDTH\par
+         mul     DWORD [ypos]\par
+         add     eax, [xpos]\par
+         lea     eax, [board + eax]\par
+         cmp     BYTE [eax], WALL_CHAR\par
+         je invalid_move\par
+                 cmp    BYTE [eax], SNAKE_TAIL\par
+                 je invalid_move\par
+                 jmp valid_move\par
+             ; opps, that was an invalid move, reset\par
+\par
+                invalid_move:\par
+                        jmp snake_loop_end\par
+        valid_move:\par
+                 cmp BYTE[eax], GOLD\par
+         jne not_gold\par
+             inc DWORD[gold_cnt]\par
+                         mov BYTE[eax], EMPTY_CHAR\par
+                         call new_tail\par
+                         call new_food\par
+\par
+     not_gold:\par
+\par
+\par
+                ; get an action from the user\par
+                ;call   getchar\par
+                call nonblocking_getchar\par
+                cmp al, -1\par
+                je snake_loop\par
+\par
+\par
+                ; choose what to do\par
+                cmp             eax, EXITCHAR\par
+                je              snake_loop_end\par
+                cmp             eax, LEFTCHAR\par
+                je              move_left\par
+                cmp             eax, RIGHTCHAR\par
+                je              move_right\par
+                jmp             input_end                       ; or just do nothing\par
+\par
+\par
+                ; move the player according to the input character\par
+                move_left:\par
+                        cmp DWORD[snake_dir_x], 1\par
+                        jne mvl2\par
+                        mov DWORD[snake_dir_x], 0\par
+                        mov DWORD[snake_dir_y], 1\par
+                        jmp input_end\par
+                        mvl2:\par
+                        cmp DWORD[snake_dir_x], -1\par
+                        jne mvl3\par
+                        mov DWORD[snake_dir_x], 0\par
+                        mov DWORD[snake_dir_y],-1\par
+                        jmp input_end\par
+                        mvl3:\par
+                        cmp DWORD[snake_dir_y], 1\par
+                        jne mvl4\par
+                        mov DWORD[snake_dir_x], -1\par
+                        mov DWORD[snake_dir_y], 0\par
+                        jmp input_end\par
+                        mvl4:\par
+                        cmp DWORD[snake_dir_y], -1\par
+                        jne input_end\par
+                        mov DWORD[snake_dir_x], 1\par
+                        mov DWORD[snake_dir_y], 0\par
+                        jmp input_end\par
+                move_right:\par
+                        cmp DWORD[snake_dir_x], 1\par
+                        jne mvr2\par
+                        mov DWORD[snake_dir_x], 0\par
+                        mov DWORD[snake_dir_y], -1\par
+                        jmp input_end\par
+                        mvr2:\par
+                        cmp DWORD[snake_dir_x], -1\par
+                        jne mvr3\par
+                        mov DWORD[snake_dir_x], 0\par
+                        mov DWORD[snake_dir_y], 1\par
+                        jmp input_end\par
+                        mvr3:\par
+                        cmp DWORD[snake_dir_y], 1\par
+                        jne mvr4\par
+                        mov DWORD[snake_dir_x], 1\par
+                        mov DWORD[snake_dir_y], 0\par
+                        jmp input_end\par
+                        mvr4:\par
+                        cmp DWORD[snake_dir_y], -1\par
+                        jne input_end\par
+                        mov DWORD[snake_dir_x], -1\par
+                        mov DWORD[snake_dir_y], 0\par
+                        jmp input_end\par
+                input_end:\par
+\par
+\par
+        jmp             snake_loop\par
+        snake_loop_end:\par
+\par
+        mov edi, 4\par
+        ender:\par
+        push TICK\par
+        call usleep\par
+        add esp, 4\par
+        dec edi\par
+        cmp edi, 0\par
+        jg ender\par
+\par
+        ;***************CODE ENDS HERE*****************************\par
+        popa\par
+        mov             eax, 0\par
+        leave\par
+        ret\par
+\par
+\par
+;=== Function ====\par
+new_food:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+                random:\par
+                mov eax, WIDTH\par
+                mov ebx, HEIGHT\par
+                mul ebx\par
+                mov ebx, eax    ;ebx = HEIGHT*WIDTH\par
+\par
+                call rand\par
+\par
+                mov edx, 0\par
+                div ebx                 ;random number divided by HEIGHT*WIDTH\par
+                mov eax, edx    ;set the modulus into eax\par
+                lea eax, [board+eax]    ;get pointer to that spot on the board\par
+                cmp BYTE[eax], EMPTY_CHAR\par
+                jne random                                      ;make sure we only replace an empty character\par
+                mov BYTE[eax], GOLD                     ;make it a gold piece\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+\par
+; === FUNCTION ===\par
+new_tail:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+\par
+                mov     eax, WIDTH\par
+        mul     DWORD [ypos]\par
+        add     eax, [xpos]\par
+        lea     eax, [board + eax]\par
+                cmp BYTE[eax-1], SNAKE_PATH\par
+                jne nt2\par
+                mov BYTE[eax-1], SNAKE_TAIL\par
+                nt2:\par
+                cmp BYTE[eax+1], SNAKE_PATH\par
+                jne nt3\par
+                mov BYTE[eax+1], SNAKE_TAIL\par
+                nt3:\par
+                cmp BYTE[eax+WIDTH], SNAKE_PATH\par
+                jne nt4\par
+                mov BYTE[eax+WIDTH], SNAKE_TAIL\par
+                nt4:\par
+                cmp BYTE[eax-WIDTH], SNAKE_PATH\par
+                jne end_new\par
+                mov BYTE[eax-WIDTH], SNAKE_TAIL\par
+\par
+        end_new:\par
+\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+\par
+; === FUNCTION ===\par
+snake_tail_move:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+        mov ecx, DWORD[gold_cnt]\par
+\par
+        cmp ecx, 0\par
+        je end_tail_move\par
+        sub esp, 8\par
+        mov DWORD[ebp-4], 0\par
+        mov DWORD[ebp-8], 0\par
+\par
+        ymove:\par
+        cmp DWORD[ebp-4], HEIGHT\par
+        je ymoveend\par
+\par
+        mov DWORD[ebp-8], 0\par
+        xmove:\par
+        cmp DWORD[ebp-8], WIDTH\par
+        je xmoveend\par
+\par
+                mov     eax, WIDTH\par
+        mul     DWORD [ebp-4]\par
+        add     eax, DWORD[ebp-8]\par
+        lea     eax, [board + eax]\par
+\par
+                cmp BYTE[eax], SNAKE_TAIL\par
+                jne nottail\par
+\par
+\par
+                        cmp BYTE[eax+1], SNAKE_PATH\par
+                        jne p2\par
+\par
+                        mov BYTE[eax+1], SNAKE_TEMP\par
+                        mov BYTE[eax], SNAKE_PATH\par
+                        mov DWORD[ebp-4], 0\par
+                        mov DWORD[ebp-8], 0\par
+                        dec ecx\par
+                        jmp ymove\par
+                        p2:\par
+                        cmp BYTE[eax-1], SNAKE_PATH\par
+                        jne p3\par
+\par
+                        mov BYTE[eax-1], SNAKE_TEMP\par
+            mov BYTE[eax], SNAKE_PATH\par
+            mov DWORD[ebp-4], 0\par
+            mov DWORD[ebp-8], 0\par
+            dec ecx\par
+            jmp ymove\par
+\par
+                        p3:\par
+                        cmp BYTE[eax+WIDTH], SNAKE_PATH\par
+                        jne p4\par
+\par
+                        mov BYTE[eax+WIDTH], SNAKE_TEMP\par
+            mov BYTE[eax], SNAKE_PATH\par
+            mov DWORD[ebp-4], 0\par
+            mov DWORD[ebp-8], 0\par
+            dec ecx\par
+            jmp ymove\par
+                        p4:\par
+                        cmp BYTE[eax-WIDTH], SNAKE_PATH\par
+                        jne nottail\par
+\par
+                        mov BYTE[eax-WIDTH], SNAKE_TEMP\par
+            mov BYTE[eax], SNAKE_PATH\par
+            mov DWORD[ebp-4], 0\par
+            mov DWORD[ebp-8], 0\par
+            dec ecx\par
+            jmp ymove\par
+\par
+        nottail:\par
+\par
+        inc DWORD[ebp-8]\par
+        jmp xmove\par
+        xmoveend:\par
+\par
+        inc DWORD[ebp-4]\par
+        jmp ymove\par
+        ymoveend:\par
+\par
+\par
+        end_tail_move:\par
+\par
+        call snake_replace\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+; ===FUNCTION ===\par
+snake_replace:\par
+        push ebp\par
+        mov ebp, esp\par
+\par
+                sub esp, 8\par
+                mov DWORD[ebp-4], 0\par
+                mov DWORD[ebp-8], 0\par
+                yrep:\par
+                cmp DWORD[ebp-4], HEIGHT\par
+                je yrepend\par
+\par
+                mov DWORD[ebp-8], 0\par
+                xrep:\par
+                cmp DWORD[ebp-8], WIDTH\par
+                je xrepend\par
+                mov     eax, WIDTH\par
+        mul     DWORD [ebp-4]\par
+        add     eax, DWORD[ebp-8]\par
+        lea     eax, [board + eax]\par
+                cmp BYTE[eax], SNAKE_PATH\par
+                jne check_tmp\par
+                mov BYTE[eax], EMPTY_CHAR\par
+                check_tmp:\par
+                cmp BYTE[eax], SNAKE_TEMP\par
+                jne no_change\par
+                mov BYTE[eax], SNAKE_TAIL\par
+                no_change:\par
+\par
+                inc DWORD[ebp-8]\par
+                jmp xrep\par
+                xrepend:\par
+                inc DWORD[ebp-4]\par
+                jmp yrep\par
+                yrepend:\par
+\par
+        mov esp, ebp\par
+        pop ebp\par
+        ret\par
+\par
+\par
+; === FUNCTION ===\par
+raw_mode_on:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        push    raw_mode_on_cmd\par
+        call    system\par
+        add             esp, 4\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+\par
+; === FUNCTION ===\par
+raw_mode_off:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        push    raw_mode_off_cmd\par
+        call    system\par
+        add             esp, 4\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+\par
+; === FUNCTION ===\par
+init_board:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        ; FILE* and loop counter\par
+        ; ebp-4, ebp-8\par
+        sub             esp, 8\par
+\par
+        ; open the file\par
+        push    mode_r\par
+        push    board_file\par
+        call    fopen\par
+        add             esp, 8\par
+        mov             DWORD [ebp-4], eax\par
+\par
+        ; read the file data into the global buffer\par
+        ; line-by-line so we can ignore the newline characters\par
+        mov             DWORD [ebp-8], 0\par
+        read_loop:\par
+        cmp             DWORD [ebp-8], HEIGHT\par
+        je              read_loop_end\par
+\par
+                ; find the offset (WIDTH * counter)\par
+                mov             eax, WIDTH\par
+                mul             DWORD [ebp-8]\par
+                lea             ebx, [board + eax]\par
+\par
+                ; read the bytes into the buffer\par
+                push    DWORD [ebp-4]\par
+                push    WIDTH\par
+                push    1\par
+                push    ebx\par
+                call    fread\par
+                add             esp, 16\par
+\par
+                ; slurp up the newline\par
+                push    DWORD [ebp-4]\par
+                call    fgetc\par
+                add             esp, 4\par
+\par
+        inc             DWORD [ebp-8]\par
+        jmp             read_loop\par
+        read_loop_end:\par
+\par
+        ; close the open file handle\par
+        push    DWORD [ebp-4]\par
+        call    fclose\par
+        add             esp, 4\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+\par
+; === FUNCTION ===\par
+snake_render:\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        ; two ints, for two loop counters\par
+        ; ebp-4, ebp-8\par
+        sub             esp, 8\par
+\par
+        ; clear the screen\par
+        push    clear_screen_cmd\par
+        call    system\par
+        add             esp, 4\par
+\par
+        ; print the help information\par
+        push    snake_help_str\par
+        call    printf\par
+        add             esp, 4\par
+\par
+        push    DWORD[gold_cnt]\par
+        push    gold_fmt\par
+        call    printf\par
+        add     esp, 4\par
+\par
+\par
+        call snake_tail_move\par
+\par
+        ; outside loop by height\par
+        ; i.e. for(c=0; c<height; c++)\par
+        mov             DWORD [ebp-4], 0\par
+        y_loop_start:\par
+        cmp             DWORD [ebp-4], HEIGHT\par
+        je              y_loop_end\par
+\par
+                ; inside loop by width\par
+                ; i.e. for(c=0; c<width; c++)\par
+                mov             DWORD [ebp-8], 0\par
+                x_loop_start:\par
+                cmp             DWORD [ebp-8], WIDTH\par
+                je              x_loop_end\par
+\par
+                        ; check if (xpos,ypos)=(x,y)\par
+                        mov             eax, [xpos]\par
+                        cmp             eax, DWORD [ebp-8]\par
+                        jne             print_board\par
+                        mov             eax, [ypos]\par
+                        cmp             eax, DWORD [ebp-4]\par
+                        jne             print_board\par
+                                ; if both were equal, print the player\par
+                                push    SNAKE_CHAR\par
+                                jmp             print_end\par
+                        print_board:\par
+                                ; otherwise print whatever's in the buffer\par
+                                mov             eax, [ebp-4]\par
+                                mov             ebx, WIDTH\par
+                                mul             ebx\par
+                                add             eax, [ebp-8]\par
+                                mov             ebx, 0\par
+                                mov             bl, BYTE [board + eax]\par
+                                push    ebx\par
+                        print_end:\par
+                        call    putchar\par
+                        add             esp, 4\par
+\par
+                inc             DWORD [ebp-8]\par
+                jmp             x_loop_start\par
+                x_loop_end:\par
+\par
+                ; write a carriage return (necessary when in raw mode)\par
+                push    0x0d\par
+                call    putchar\par
+                add             esp, 4\par
+\par
+                ; write a newline\par
+                push    0x0a\par
+                call    putchar\par
+                add             esp, 4\par
+\par
+        inc             DWORD [ebp-4]\par
+        jmp             y_loop_start\par
+        y_loop_end:\par
+\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+\par
+\par
+; === FUNCTION ===\par
+nonblocking_getchar:\par
+\par
+; returns -1 on no-data\par
+; returns char on succes\par
+\par
+; magic values\par
+%define F_GETFL 3\par
+%define F_SETFL 4\par
+%define O_NONBLOCK 2048\par
+%define STDIN 0\par
+\par
+        push    ebp\par
+        mov             ebp, esp\par
+\par
+        ; single int used to hold flags\par
+        ; single character (aligned to 4 bytes) return\par
+        sub             esp, 8\par
+\par
+        ; get current stdin flags\par
+        ; flags = fcntl(stdin, F_GETFL, 0)\par
+        push    0\par
+        push    F_GETFL\par
+        push    STDIN\par
+        call    fcntl\par
+        add             esp, 12\par
+        mov             DWORD [ebp-4], eax\par
+\par
+        ; set non-blocking mode on stdin\par
+        ; fcntl(stdin, F_SETFL, flags | O_NONBLOCK)\par
+        or              DWORD [ebp-4], O_NONBLOCK\par
+        push    DWORD [ebp-4]\par
+        push    F_SETFL\par
+        push    STDIN\par
+        call    fcntl\par
+        add             esp, 12\par
+\par
+        call    getchar\par
+        mov             DWORD [ebp-8], eax\par
+\par
+        ; restore blocking mode\par
+        ; fcntl(stdin, F_SETFL, flags ^ O_NONBLOCK\par
+        xor             DWORD [ebp-4], O_NONBLOCK\par
+        push    DWORD [ebp-4]\par
+        push    F_SETFL\par
+        push    STDIN\par
+        call    fcntl\par
+        add             esp, 12\par
+\par
+        mov             eax, DWORD [ebp-8]\par
+\par
+        mov             esp, ebp\par
+        pop             ebp\par
+        ret\par
+}
+ 
