@@ -1,0 +1,14 @@
+ASM Game Readme
+
+The following files are associated with this project: 
+
+This collection of files was used for my final project in an Assembly language class.  Attached is the game code as well as the required text
+files to run the game.
+
+The project was to create something unique in assembly.  Andrew Kramer, the professor, suggested a game and gave basic functions to render screens and have 
+basic movement.  Expanding upon this code, I created 3 different games: snake, minesweeper, and yahtzee.
+
+While making these programs, I got a lot of practice with things like register management (with the limited number of registers) as well
+as practicing concepts like flags in bit math, specifically for the yahtzee game.  The code has some improvements I would have made given
+more time, such as making the minesweeper recursively check squares when a 0 bomb is found, however I am still vrey pleased with the end result
+and the limits of assembly programming I pushed myself to in order to achieve the results I did.  
