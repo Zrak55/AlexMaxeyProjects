@@ -1,0 +1,16 @@
+Artillery ReadMe
+
+Game created with Unity
+
+Originally, the game was created as a board game for the Game Projects course.  I thought it would play well as a video game as well.
+
+The premise is based on the classic game Battleship, but enhaned with greater strategy and decision making.  This way, the game could be
+made more interactive and engaging for a user, instead of just a random selecting of grid points.  Currently, the user plays against a 
+rudimentary AI, but I plan to implement an AI that utilizes information given by the player just as the player receieves information from
+the opponent, and eventually, introduce a simple machine learning algorithm to create a more formidable opponent.
+
+The player has a certain number of actions they can take in a turn, including moving and shooting with pieces.  Shooting with a piece
+gives away information about that piece's potential whereabouts to the opponent, giving the other player something to aim for and encouraging
+players to constantly move and reposition their pieces.  If 3 peices are lined up, they shoot off a powerful area attack, giving away to your enemy
+that there are a lot of pieces in this area, but allowing you to cover more ground.  These mixups to the classic game allow players to conceive
+different strategies and make more decisions, creating a more healthy play experience overall.
