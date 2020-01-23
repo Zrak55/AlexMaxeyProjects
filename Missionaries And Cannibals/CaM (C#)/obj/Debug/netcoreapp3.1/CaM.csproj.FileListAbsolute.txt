@@ -1,0 +1,22 @@
+C:\Users\DSU\Documents\Classes\CSC310\CaM\obj\Debug\netcoreapp3.1\CaM.csprojAssemblyReference.cache
+C:\Users\DSU\Documents\Classes\CSC310\CaM\obj\Debug\netcoreapp3.1\CaM.AssemblyInfoInputs.cache
+C:\Users\DSU\Documents\Classes\CSC310\CaM\obj\Debug\netcoreapp3.1\CaM.AssemblyInfo.cs
+C:\Users\DSU\Documents\Classes\CSC310\CaM\bin\Debug\netcoreapp3.1\CaM.exe
+C:\Users\DSU\Documents\Classes\CSC310\CaM\bin\Debug\netcoreapp3.1\CaM.deps.json
+C:\Users\DSU\Documents\Classes\CSC310\CaM\bin\Debug\netcoreapp3.1\CaM.runtimeconfig.json
+C:\Users\DSU\Documents\Classes\CSC310\CaM\bin\Debug\netcoreapp3.1\CaM.runtimeconfig.dev.json
+C:\Users\DSU\Documents\Classes\CSC310\CaM\bin\Debug\netcoreapp3.1\CaM.dll
+C:\Users\DSU\Documents\Classes\CSC310\CaM\bin\Debug\netcoreapp3.1\CaM.pdb
+C:\Users\DSU\Documents\Classes\CSC310\CaM\obj\Debug\netcoreapp3.1\CaM.dll
+C:\Users\DSU\Documents\Classes\CSC310\CaM\obj\Debug\netcoreapp3.1\CaM.pdb
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\bin\Debug\netcoreapp3.1\CaM.exe
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\bin\Debug\netcoreapp3.1\CaM.deps.json
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\bin\Debug\netcoreapp3.1\CaM.runtimeconfig.json
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\bin\Debug\netcoreapp3.1\CaM.runtimeconfig.dev.json
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\bin\Debug\netcoreapp3.1\CaM.dll
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\bin\Debug\netcoreapp3.1\CaM.pdb
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\obj\Debug\netcoreapp3.1\CaM.csprojAssemblyReference.cache
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\obj\Debug\netcoreapp3.1\CaM.AssemblyInfoInputs.cache
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\obj\Debug\netcoreapp3.1\CaM.AssemblyInfo.cs
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\obj\Debug\netcoreapp3.1\CaM.dll
+C:\Users\DSU\Documents\Classes\CSC404\CaM (C#)\obj\Debug\netcoreapp3.1\CaM.pdb

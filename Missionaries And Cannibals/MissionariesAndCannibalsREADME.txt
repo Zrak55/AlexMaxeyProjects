@@ -6,3 +6,6 @@ This was a fun exercise in working with states and finite state automata.  As fo
 back, so a balance will always be maintained.  There may be faster solutions out there, which this program does find, but that is always the most reliable method.  It was a fun exercise getting the computer to both read a state and 
 recognize if a state had been reached before, because if a state has been reached before in a certain decision making path, you have entered a loop and that solution is no longer valid.  The program was written in C++ with the DevC++
 IDE.
+(EDIT)
+More efficient version created in C# using Visual Studio.  Work is further updated so similar states visited in other branches can prevent the addition of a state to the processing structure, reducing the number of nodes needed to be
+processed.
