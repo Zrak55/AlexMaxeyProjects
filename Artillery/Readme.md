@@ -1,4 +1,4 @@
-Artillery ReadMe
+# Artillery
 
 Game created with Unity
 
