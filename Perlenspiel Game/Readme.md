@@ -1,4 +1,4 @@
-Perlenspiel Game
+# Perlenspiel Game
 
 Written in Javascript and the Perlenspiel engine.  Launch web link to play.
 
