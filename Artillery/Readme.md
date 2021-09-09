@@ -1,6 +1,6 @@
 # Artillery
 
-Game created with Unity
+Game created with Unity.  Download the Game folder and run the executable to play (Windows)
 
 Originally, the game was created as a board game for the Game Projects course.  I thought it would play well as a video game as well.
 
