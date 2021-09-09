@@ -1,4 +1,5 @@
-Missionaries and Cannibals README
+# Missionaries and Cannibals
+
 The associated code is meant to tackle the classic problem of Missionaries and Cannibals.  The basis of the problem is you have an equal number of missionaries and cannibals on one side of a river with a boat that can
 only hold a certain number of people.  If the Cannibals ever outnumber the missionaries on any side of the river or on the boat itself, they will eat the missionaries.  You must decide how to cross the river without
 anyone being eaten.  
