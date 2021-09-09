@@ -1,4 +1,4 @@
-Risk Probability README
+# Risk Probability
 
 Developed in C++
 
