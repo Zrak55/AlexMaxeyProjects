@@ -1,6 +1,6 @@
-https://drive.google.com/drive/folders/1mCyJzIhLT6mpgGgcwJdgZawEYJb9S9L8?usp=sharing
+# Blind
 
-Follow the link and download Blind_Final.  Unzip the folder and run the executable called "Blind" within it.  Recommended on Windows
+See instructions doc to play.
 
 This was made as a team project as a part of Global Game Jam 2019.  It was a great experience working with different people with different 
 skillsets like 3D and audio artists to put together a coherent project.  The ability to work together with these different groups of people
