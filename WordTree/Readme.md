@@ -1,4 +1,4 @@
-Lexicon/Word Tree
+# Lexicon/Word Tree
 Alexander Maxey
 
 The attached code, when run, allows a user to manipulte a tree that can contain any 
