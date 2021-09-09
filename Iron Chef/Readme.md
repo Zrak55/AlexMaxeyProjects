@@ -1,4 +1,6 @@
-Run the executable in the "Build" folder to play.  
+# Iron Chef 2D
+
+Run the executable in the "Build" folder to play.  Windows
 
 Instructions: Use WASD to move, and Left/Right click to attack.  Collect materials from defeated monsters to fill the bars, but don't fill up the red one!  Return to the starting cauldron to finish the level.
 
