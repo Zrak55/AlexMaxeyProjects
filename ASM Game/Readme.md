@@ -1,4 +1,4 @@
-ASM Game Readme
+#ASM Game Readme
 
 The following files are associated with this project: ASM game code.rtf  Menu.txt  board.txt  minesweeper.txt
 
