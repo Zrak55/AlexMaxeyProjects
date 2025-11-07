@@ -1,3 +1,11 @@
+Primal Hunger
+Game created as a part of Maxeymus Games in conjunction with Nicholas, Evan, and Emily Maxey.  Game was released to Steam in 2025.
+Battle Royale featuring various monsters evolving to become the Alpha Predator.
+Filled numerous roles on the project, including gameplay programming, network programming, audio design, and level design.
+The project was a large undertaking, creating a fully functional networked real-time action game.  The project lead to a ton of great skill development,
+including massive optimizations in Unity, rendering, and in programming in general.
+https://store.steampowered.com/app/1702610/Primal_Hunger/
+
 Timewalk Tower Defense
 Game was created as a part of Maxeymus Games, in conjunction with Nicholas and Emily Maxey.  Game was released
 to Steam on January 1st, 2021
@@ -5,6 +13,6 @@ This game is an asymmetric tower defense, in which you build your defenses in tr
 then jump into the fray as a hero.  This project was very satisfying to work on, seeing my own ideas evolve into
 a fully realized commercial product.  I learned much from working on this, including the importance of file
 organization, proper OO principles in programming, and limiting scope creep.  I learned some useful skills as
-well, suh as working with pathfinding in Unity's Nav Mesh.  I am very satisfied with the result of the project
+well, such as working with pathfinding in Unity's Nav Mesh.  I am very satisfied with the result of the project
 and can't wait to produce more works with the team.
 https://store.steampowered.com/app/1365590/Timewalk_Tower_Defense/#:~:text=About%20This%20Game&text=In%20this%20asymmetric%20tower%20defense,to%20fight%20alongside%20the%20towers.
